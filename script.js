@@ -2416,4 +2416,460 @@ function devicePower() { showToast('Device power toggled', 'info'); }
 function startMixing() { createBlend(); }
 function cleanDevice() { showToast('Cleaning cycle started', 'info'); }
 function calibrateDevice() { showToast('Calibration started', 'info'); }
+
+// ============================================================
+//  GLASS BOTTLE VISUALIZER
+// ============================================================
+
+/**
+ * Update the glass bottle visualizer with the current blend state.
+ * Called automatically by updateMix().
+ */
+function updateGlassBottleVisualizer() {
+    const liquid  = document.getElementById('gbvLiquid');
+    const aura    = document.getElementById('gbvAura');
+    const bubbles = document.getElementById('gbvBubbles');
+    const label   = document.getElementById('gbvLabelName');
+    const fillTxt = document.getElementById('gbvFillText');
+
+    if (!liquid) return;
+
+    const total = Object.values(APP.currentMix).reduce((sum, v) => sum + v, 0);
+    const height = Math.min(total, 100);
+    const gradient = createScentGradient(APP.currentMix);
+
+    // Liquid level & colour
+    liquid.style.height   = height + '%';
+    liquid.style.background = gradient !== 'transparent' ? gradient : 'linear-gradient(135deg,#ccc,#eee)';
+
+    // Aura glow
+    if (aura) {
+        if (total > 0) {
+            aura.style.background = gradient;
+            aura.classList.add('active');
+        } else {
+            aura.classList.remove('active');
+        }
+    }
+
+    // Label text
+    const blendTitle = document.getElementById('blendTitle');
+    if (label) {
+        label.textContent = (blendTitle && blendTitle.textContent !== 'Your Custom Blend')
+            ? blendTitle.textContent
+            : 'My Blend';
+    }
+
+    // Fill indicator text
+    if (fillTxt) {
+        fillTxt.textContent = total === 0 ? 'Empty' : `${height}% filled`;
+    }
+
+    // Bubbles — regenerate when liquid changes significantly
+    if (bubbles && total > 0) {
+        _spawnGlassBottleBubbles(bubbles, gradient);
+    } else if (bubbles) {
+        bubbles.innerHTML = '';
+    }
+}
+
+/** Spawn small rising bubbles inside the glass bottle liquid. */
+function _spawnGlassBottleBubbles(container, gradient) {
+    // Only refresh if count changed noticeably
+    const desiredCount = Math.min(6, Math.floor(
+        Object.values(APP.currentMix).reduce((s, v) => s + v, 0) / 15
+    ));
+    if (container.children.length === desiredCount) return;
+
+    container.innerHTML = '';
+    for (let i = 0; i < desiredCount; i++) {
+        const b = document.createElement('div');
+        b.className = 'gbv-bubble';
+        const size = 4 + Math.random() * 6;
+        b.style.cssText = `
+            width: ${size}px;
+            height: ${size}px;
+            left: ${10 + Math.random() * 70}%;
+            bottom: ${Math.random() * 30}%;
+            animation-duration: ${2 + Math.random() * 3}s;
+            animation-delay: ${Math.random() * 2}s;
+        `;
+        container.appendChild(b);
+    }
+}
+
+// ============================================================
+//  ECO-SCORE TRACKER
+// ============================================================
+
+/**
+ * Eco-friendliness weights per fragrance note (0–100).
+ * Higher = more sustainable / natural.
+ */
+const ECO_WEIGHTS = {
+    fresh:    88,  // mint, green tea, bamboo — highly renewable
+    floral:   78,  // roses / jasmine — natural but water-intensive
+    citrus:   82,  // fruit-derived, fast-growing
+    woody:    60,  // sandalwood can be over-harvested; cedar is better
+    oriental: 42,  // oud & amber are resource-intensive
+    spicy:    65   // pepper/cinnamon — fairly sustainable crops
+};
+
+const ECO_GRADE_MAP = [
+    { min: 85, grade: 'A+', cls: 'grade-a-plus' },
+    { min: 70, grade: 'A',  cls: 'grade-a'      },
+    { min: 55, grade: 'B',  cls: 'grade-b'       },
+    { min: 40, grade: 'C',  cls: 'grade-c'       },
+    { min: 0,  grade: 'D',  cls: 'grade-d'       }
+];
+
+/** Calculate and render the eco-score for the current blend. */
+function updateEcoScore() {
+    const badge      = document.getElementById('ecoScoreBadge');
+    const fill       = document.getElementById('ecoScoreFill');
+    const gauge      = document.getElementById('ecoScoreGauge');
+    const number     = document.getElementById('ecoScoreNumber');
+    const breakdown  = document.getElementById('ecoScoreBreakdown');
+
+    if (!badge || !fill || !number || !breakdown) return;
+
+    const total = Object.values(APP.currentMix).reduce((s, v) => s + v, 0);
+
+    if (total === 0) {
+        badge.textContent = '—';
+        badge.className = 'eco-score-badge';
+        fill.style.width = '0%';
+        number.textContent = '—';
+        if (gauge) gauge.setAttribute('aria-valuenow', '0');
+        breakdown.innerHTML = '<p class="eco-score-empty">Mix ingredients to reveal your eco-impact</p>';
+        return;
+    }
+
+    // Weighted average eco score
+    let weightedSum = 0;
+    Object.entries(APP.currentMix).forEach(([note, pct]) => {
+        if (pct > 0) weightedSum += (pct / total) * (ECO_WEIGHTS[note] || 50);
+    });
+    const score = Math.round(weightedSum);
+
+    // Grade
+    const { grade, cls } = ECO_GRADE_MAP.find(g => score >= g.min) || ECO_GRADE_MAP[ECO_GRADE_MAP.length - 1];
+
+    // Update DOM
+    fill.style.width = score + '%';
+    if (gauge) gauge.setAttribute('aria-valuenow', String(score));
+    number.textContent = String(score);
+    number.style.color = score >= 70 ? 'var(--success-color)' : score >= 50 ? 'var(--warning-color)' : 'var(--error-color)';
+    badge.textContent = grade;
+    badge.className = `eco-score-badge ${cls}`;
+
+    // Breakdown — top 4 active notes
+    const active = Object.entries(APP.currentMix)
+        .filter(([_, v]) => v > 0)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 4);
+
+    breakdown.innerHTML = active.map(([note, pct]) => {
+        const eco = ECO_WEIGHTS[note] || 50;
+        const n   = NOTES[note];
+        const icon = eco >= 75 ? '🌿' : eco >= 55 ? '🌱' : '⚠️';
+        return `
+            <div class="eco-score-item">
+                <span class="eco-score-item-icon">${icon}</span>
+                <span class="eco-score-item-label">${n.emoji} ${n.name} (${pct}%)</span>
+                <span class="eco-score-item-value">${eco}/100</span>
+            </div>
+        `;
+    }).join('');
+}
+
+// ============================================================
+//  GENAI STORY PANEL
+// ============================================================
+
+/** Story template fragments for simulated GenAI output. */
+const STORY_TEMPLATES = {
+    floral: [
+        'walks through a sunlit garden where roses brush softly against your fingertips',
+        'wanders into a hidden greenhouse filled with night-blooming jasmine',
+        'discovers a secret courtyard where petals drift on a warm afternoon breeze'
+    ],
+    citrus: [
+        'steps into a sunlit Mediterranean marketplace buzzing with freshly cut fruits',
+        'wakes to the scent of a grove just after dawn, dew still on the leaves',
+        'peels an orange by an open window as golden light floods the room'
+    ],
+    woody: [
+        'follows a mossy trail deep into an ancient cedar forest after rain',
+        'sits beside a fire of sandalwood, its smoke curling into a twilight sky',
+        'breathes in the quiet wisdom of aged oak in a centuries-old library'
+    ],
+    oriental: [
+        'discovers a candlelit souk where amber and oud perfume the warm air',
+        'unravels silk adorned with precious resins traded along the Silk Road',
+        'enters a palace courtyard where benzoin incense rises into velvet night'
+    ],
+    fresh: [
+        'stands at the edge of a waterfall, cool mist kissing their skin',
+        'steps barefoot on morning dew-covered grass in a silent meadow',
+        'breathes the clarity of a mountain summit just after snowfall'
+    ],
+    spicy: [
+        'explores a vibrant spice bazaar where pepper and cardamom fill the air',
+        'warms their hands by a kitchen fire fragrant with cinnamon and clove',
+        'opens an antique chest lined with ginger and allspice from distant shores'
+    ]
+};
+
+const STORY_EMOTIONS = {
+    floral:   ['tender', 'romantic', 'delicate', 'blossoming'],
+    citrus:   ['joyful', 'electric', 'vibrant', 'energising'],
+    woody:    ['grounded', 'confident', 'timeless', 'strong'],
+    oriental: ['mysterious', 'opulent', 'seductive', 'rich'],
+    fresh:    ['serene', 'clear', 'free', 'renewed'],
+    spicy:    ['bold', 'passionate', 'daring', 'alive']
+};
+
+let _genaiCurrentStory = '';
+
+/**
+ * Generate a simulated AI fragrance story based on APP.currentMix.
+ */
+function generateScentStory() {
+    const total = Object.values(APP.currentMix).reduce((s, v) => s + v, 0);
+    if (total === 0) {
+        showToast('Create a blend first to generate a story 💡', 'warning');
+        return;
+    }
+
+    const placeholder = document.getElementById('genaiPlaceholder');
+    const loading     = document.getElementById('genaiLoading');
+    const storyText   = document.getElementById('genaiStoryText');
+    const actions     = document.getElementById('genaiStoryActions');
+
+    if (placeholder) placeholder.classList.add('hidden');
+    if (storyText)   storyText.classList.add('hidden');
+    if (actions)     actions.classList.add('hidden');
+    if (loading)     loading.classList.remove('hidden');
+
+    // Simulate network latency for realism
+    const delay = 1200 + Math.random() * 800;
+    setTimeout(() => {
+        const story = _buildScentStory();
+        _genaiCurrentStory = story;
+
+        if (loading)   loading.classList.add('hidden');
+        if (storyText) {
+            storyText.textContent = story;
+            storyText.classList.remove('hidden');
+        }
+        if (actions) actions.classList.remove('hidden');
+    }, delay);
+}
+
+/** Build a story string from the current mix. */
+function _buildScentStory() {
+    // Rank notes by intensity
+    const active = Object.entries(APP.currentMix)
+        .filter(([_, v]) => v > 0)
+        .sort((a, b) => b[1] - a[1]);
+
+    if (active.length === 0) return 'Create a blend to begin your story.';
+
+    const [primaryNote]   = active[0];
+    const [secondaryNote] = active[1] || [null];
+
+    const primaryTemplates  = STORY_TEMPLATES[primaryNote]  || STORY_TEMPLATES.floral;
+    const primaryEmotions   = STORY_EMOTIONS[primaryNote]   || STORY_EMOTIONS.floral;
+    const secondaryEmotions = secondaryNote
+        ? (STORY_EMOTIONS[secondaryNote] || [])
+        : [];
+
+    const scene   = primaryTemplates[Math.floor(Math.random() * primaryTemplates.length)];
+    const emotion = primaryEmotions[Math.floor(Math.random() * primaryEmotions.length)];
+    const accent  = secondaryEmotions.length
+        ? secondaryEmotions[Math.floor(Math.random() * secondaryEmotions.length)]
+        : '';
+
+    const blendName = (document.getElementById('blendTitle') || {}).textContent || 'Your Custom Blend';
+    const noteCount = active.length;
+
+    const opener = `"${blendName}" — `;
+    const body   = `A fragrance for those who ${scene}. `;
+    const feel   = `Deeply ${emotion}${accent ? ` and ${accent}` : ''}, `;
+    const close  = noteCount >= 3
+        ? `this ${noteCount}-note composition unfolds like a journey, revealing new layers with every hour on the skin.`
+        : 'this blend lingers like a treasured memory, impossible to forget.';
+
+    return opener + body + feel + close;
+}
+
+/** Read the current story aloud using speech synthesis. */
+function readScentStory() {
+    if (_genaiCurrentStory) {
+        speak(_genaiCurrentStory);
+    } else {
+        showToast('Generate a story first', 'warning');
+    }
+}
+
+/** Copy the current story to the clipboard. */
+function copyStoryToClipboard() {
+    if (!_genaiCurrentStory) {
+        showToast('Generate a story first', 'warning');
+        return;
+    }
+    navigator.clipboard.writeText(_genaiCurrentStory)
+        .then(() => showToast('Story copied to clipboard! 📋', 'success'))
+        .catch(() => showToast('Could not copy story', 'warning'));
+}
+
+// ============================================================
+//  SHAREABLE URL FEATURE
+// ============================================================
+
+/**
+ * Encode the current blend as a query-string parameter and update the
+ * share-URL input field.
+ */
+function generateShareableUrl() {
+    const total = Object.values(APP.currentMix).reduce((s, v) => s + v, 0);
+    const input = document.getElementById('shareableUrlInput');
+    const hint  = document.getElementById('shareUrlHint');
+
+    if (total === 0) {
+        showToast('Create a blend first to share 💡', 'warning');
+        return;
+    }
+
+    // Encode blend as compact base64-like string via URLSearchParams
+    // Use 2-letter keys to avoid collision between 'floral' and 'fresh'
+    const NOTE_ENCODE = { floral: 'fl', citrus: 'ci', woody: 'wo', oriental: 'or', fresh: 'fr', spicy: 'sp' };
+    const params = new URLSearchParams();
+    Object.entries(APP.currentMix).forEach(([note, val]) => {
+        if (val > 0) params.set(NOTE_ENCODE[note] || note.slice(0, 2), String(val));
+    });
+
+    // Add blend name if set
+    const blendName = (document.getElementById('blendTitle') || {}).textContent;
+    if (blendName && blendName !== 'Your Custom Blend') {
+        params.set('n', encodeURIComponent(blendName));
+    }
+
+    const base = window.location.origin + window.location.pathname;
+    const shareUrl = `${base}?blend=${btoa(params.toString())}#lab`;
+
+    if (input) {
+        input.value = shareUrl;
+        input.select();
+    }
+    if (hint) hint.textContent = '✅ Share link generated successfully!';
+
+    // Auto-clear hint after 4 s
+    setTimeout(() => { if (hint) hint.textContent = ''; }, 4000);
+}
+
+/** Copy the share URL to the clipboard. */
+function copyShareableUrl() {
+    const input = document.getElementById('shareableUrlInput');
+    if (!input || !input.value) {
+        generateShareableUrl();
+        return;
+    }
+
+    navigator.clipboard.writeText(input.value)
+        .then(() => {
+            showToast('Share link copied to clipboard! 🔗', 'success');
+            const hint = document.getElementById('shareUrlHint');
+            if (hint) hint.textContent = '📋 Link copied!';
+            setTimeout(() => { if (hint) hint.textContent = ''; }, 3000);
+        })
+        .catch(() => {
+            // Clipboard API unavailable — prompt the user to copy manually
+            input.select();
+            showToast('Please copy the highlighted link manually', 'info');
+        });
+}
+
+/** Native share sheet (Web Share API). */
+function shareViaNative() {
+    const total = Object.values(APP.currentMix).reduce((s, v) => s + v, 0);
+    if (total === 0) {
+        showToast('Create a blend first 💡', 'warning');
+        return;
+    }
+
+    generateShareableUrl();
+    const input = document.getElementById('shareableUrlInput');
+    const url   = (input && input.value) ? input.value : window.location.href;
+
+    const blendName = (document.getElementById('blendTitle') || {}).textContent || 'My Custom Blend';
+    const text = `Check out my custom fragrance blend "${blendName}" – created with My Scent Lab by L'Oréal! 🌸 #MyScentLab`;
+
+    if (navigator.share) {
+        navigator.share({ title: blendName, text, url })
+            .catch(err => {
+                if (err.name !== 'AbortError') showToast('Could not share', 'warning');
+            });
+    } else {
+        copyShareableUrl();
+    }
+}
+
+/**
+ * Read blend parameters from the URL on page load and apply them
+ * if a ?blend= param is present.
+ */
+function loadBlendFromUrl() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const encoded = params.get('blend');
+        if (!encoded) return;
+
+        const decoded = new URLSearchParams(atob(encoded));
+        // Decode using the same 2-letter key scheme used when encoding
+        const NOTE_DECODE = { fl: 'floral', ci: 'citrus', wo: 'woody', or: 'oriental', fr: 'fresh', sp: 'spicy' };
+        let applied = false;
+
+        decoded.forEach((val, key) => {
+            const note = NOTE_DECODE[key];
+            if (note && APP.currentMix.hasOwnProperty(note)) {
+                const slider = document.getElementById(`${note}Slider`);
+                if (slider) {
+                    slider.value = val;
+                    applied = true;
+                }
+            }
+        });
+
+        if (applied) {
+            updateMix();
+            goTo('lab');
+            showToast('Blend loaded from shared link! 🔗', 'success');
+        }
+    } catch {
+        // Invalid or tampered URL — silently ignore
+    }
+}
+
+// ============================================================
+//  WIRE NEW FEATURES INTO THE BLEND UPDATE CYCLE
+// ============================================================
+
+/**
+ * Override (extend) the existing updateMix to also update the three
+ * new panels whenever the blend changes.
+ */
+(function patchUpdateMix() {
+    const _originalUpdateMix = updateMix;
+    updateMix = function () {
+        _originalUpdateMix.apply(this, arguments);
+        updateGlassBottleVisualizer();
+        updateEcoScore();
+        generateShareableUrl();   // keep URL in sync automatically
+    };
+})();
+
+// Load a blend from the URL on startup (after DOM is ready)
+document.addEventListener('DOMContentLoaded', loadBlendFromUrl);
 function orderRefills() { showToast('Refill order page coming soon', 'info'); }

@@ -929,6 +929,38 @@
                 </button>
             </div>
 
+            <!-- ===== GLASS BOTTLE VISUALIZER ===== -->
+            <div class="glass-bottle-visualizer" id="glassBottleVisualizer"
+                 aria-label="3D glass bottle preview" aria-live="polite">
+                <h4 class="gbv-title">
+                    <i class="fas fa-flask" aria-hidden="true"></i>
+                    Glass Bottle Preview
+                </h4>
+                <div class="gbv-scene" id="gbvScene">
+                    <div class="gbv-aura" id="gbvAura" aria-hidden="true"></div>
+                    <div class="gbv-bottle" id="gbvBottle" aria-hidden="true">
+                        <div class="gbv-cap" id="gbvCap"></div>
+                        <div class="gbv-neck" id="gbvNeck"></div>
+                        <div class="gbv-body" id="gbvBody">
+                            <div class="gbv-liquid" id="gbvLiquid"></div>
+                            <div class="gbv-reflection" id="gbvReflection"></div>
+                            <div class="gbv-shine" id="gbvShine"></div>
+                            <div class="gbv-bubbles" id="gbvBubbles"></div>
+                        </div>
+                        <div class="gbv-label" id="gbvLabel">
+                            <span class="gbv-label-name" id="gbvLabelName">
+                                My Blend
+                            </span>
+                            <span class="gbv-label-brand">My Scent Lab</span>
+                        </div>
+                    </div>
+                    <div class="gbv-shadow" id="gbvShadow" aria-hidden="true"></div>
+                </div>
+                <div class="gbv-fill-indicator">
+                    <span id="gbvFillText">0% filled</span>
+                </div>
+            </div>
+
         </div>
         <!-- /mixer-visual -->
 
@@ -1214,6 +1246,133 @@
                         Share
                     </button>
                 </div>
+            </div>
+
+            <!-- ===== ECO-SCORE TRACKER ===== -->
+            <div class="eco-score-tracker" id="ecoScoreTracker"
+                 aria-label="Eco-score rating for current blend">
+                <div class="eco-score-header">
+                    <div class="eco-score-title">
+                        <i class="fas fa-leaf" aria-hidden="true"></i>
+                        <span>Eco-Score</span>
+                    </div>
+                    <div class="eco-score-badge" id="ecoScoreBadge"
+                         aria-label="Eco rating">A+</div>
+                </div>
+                <div class="eco-score-gauge" role="progressbar"
+                     aria-valuemin="0" aria-valuemax="100"
+                     aria-valuenow="0" aria-label="Eco score gauge"
+                     id="ecoScoreGauge">
+                    <div class="eco-score-fill" id="ecoScoreFill"
+                         style="width:0%"></div>
+                </div>
+                <div class="eco-score-details">
+                    <span class="eco-score-number" id="ecoScoreNumber">—</span>
+                    <span class="eco-score-label">/ 100 points</span>
+                </div>
+                <div class="eco-score-breakdown" id="ecoScoreBreakdown">
+                    <p class="eco-score-empty">
+                        Mix ingredients to reveal your eco-impact
+                    </p>
+                </div>
+            </div>
+
+            <!-- ===== GENAI STORY PANEL ===== -->
+            <div class="genai-story-panel" id="genaiStoryPanel"
+                 aria-label="AI-generated scent story">
+                <div class="genai-story-header">
+                    <div class="genai-story-title">
+                        <i class="fas fa-robot" aria-hidden="true"></i>
+                        <span>AI Scent Story</span>
+                        <span class="genai-badge">GenAI</span>
+                    </div>
+                    <button class="genai-generate-btn" type="button"
+                            onclick="generateScentStory()"
+                            id="genaiGenerateBtn"
+                            aria-label="Generate AI scent story">
+                        <i class="fas fa-magic" aria-hidden="true"></i>
+                        Generate
+                    </button>
+                </div>
+                <div class="genai-story-body" id="genaiStoryBody"
+                     aria-live="polite">
+                    <p class="genai-placeholder" id="genaiPlaceholder">
+                        Create a blend and press Generate to receive your
+                        personalized AI-crafted fragrance story.
+                    </p>
+                    <div class="genai-loading hidden" id="genaiLoading"
+                         aria-label="Loading story" role="status">
+                        <div class="genai-dots" aria-hidden="true">
+                            <div class="genai-dot"></div>
+                            <div class="genai-dot"></div>
+                            <div class="genai-dot"></div>
+                        </div>
+                        <span>AI is crafting your story…</span>
+                    </div>
+                    <div class="genai-story-text hidden" id="genaiStoryText"
+                         aria-live="polite"></div>
+                </div>
+                <div class="genai-story-actions hidden" id="genaiStoryActions">
+                    <button class="btn-secondary" type="button"
+                            onclick="readScentStory()">
+                        <i class="fas fa-volume-up" aria-hidden="true"></i>
+                        Listen
+                    </button>
+                    <button class="btn-secondary" type="button"
+                            onclick="copyStoryToClipboard()">
+                        <i class="fas fa-copy" aria-hidden="true"></i>
+                        Copy
+                    </button>
+                </div>
+            </div>
+
+            <!-- ===== SHAREABLE URL FEATURE ===== -->
+            <div class="shareable-url-panel" id="shareableUrlPanel"
+                 aria-label="Shareable blend link">
+                <div class="share-url-header">
+                    <i class="fas fa-link" aria-hidden="true"></i>
+                    <span>Share Your Blend</span>
+                </div>
+                <div class="share-url-input-row">
+                    <input type="text" class="share-url-input"
+                           id="shareableUrlInput" readonly
+                           placeholder="Generate a blend to get a share link"
+                           aria-label="Shareable blend URL">
+                    <button class="share-url-copy-btn" type="button"
+                            onclick="copyShareableUrl()"
+                            id="shareUrlCopyBtn"
+                            aria-label="Copy share link">
+                        <i class="fas fa-copy" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <div class="share-url-methods">
+                    <button class="share-method-btn" type="button"
+                            onclick="shareToSocial('twitter')"
+                            aria-label="Share on Twitter">
+                        <i class="fab fa-twitter" aria-hidden="true"></i>
+                        Twitter
+                    </button>
+                    <button class="share-method-btn" type="button"
+                            onclick="shareToSocial('facebook')"
+                            aria-label="Share on Facebook">
+                        <i class="fab fa-facebook" aria-hidden="true"></i>
+                        Facebook
+                    </button>
+                    <button class="share-method-btn" type="button"
+                            onclick="shareViaNative()"
+                            aria-label="More sharing options">
+                        <i class="fas fa-share-alt" aria-hidden="true"></i>
+                        More
+                    </button>
+                    <button class="share-method-btn" type="button"
+                            onclick="generateShareableUrl()"
+                            id="genShareUrlBtn"
+                            aria-label="Generate share link">
+                        <i class="fas fa-sync-alt" aria-hidden="true"></i>
+                        Generate
+                    </button>
+                </div>
+                <p class="share-url-hint" id="shareUrlHint"></p>
             </div>
 
         </div>
