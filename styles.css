@@ -1,13 +1,8 @@
-/* Existing styles from commit efa7f87 */
+/* Existing styles from commit efa7f87a08784c077d51aa2a98728670eda84d69/styles.css */
 
-/* Your existing styles will be here */
+/* UI POLISH PATCH */
 
-/* Cream/Blush Theme Overrides */
-body {
-    background-color: #F5F5DC;
-    color: #D2691E;
-}
-.button {
-    background-color: #FFB6C1;
-    border: 1px solid #DDA0DD;
+:root {
+  --cream: #f9f6ec;
+  --blush: #ffddc1;
 }
