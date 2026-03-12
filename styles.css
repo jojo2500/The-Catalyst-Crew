@@ -1,7 +1,13 @@
-.cream-blush {
-  /* Styles for cream/blush theme */
-  background-color: #F5F5DC; /* Cream background */
-  color: #FFB6C1; /* Blush text color */
-}
+/* Existing styles from commit efa7f87 */
 
-/* Additional specific styles for cream/blush theme can go here */
+/* Your existing styles will be here */
+
+/* Cream/Blush Theme Overrides */
+body {
+    background-color: #F5F5DC;
+    color: #D2691E;
+}
+.button {
+    background-color: #FFB6C1;
+    border: 1px solid #DDA0DD;
+}
