@@ -1,19 +1,7 @@
-.existing_content_here
-/* Safe cream/blush theme overrides */
-body {
-    background-color: #f5f0e1; /* Light cream background */
-    color: #5a3e4e; /* Darker blush text color */
+.cream-blush {
+  /* Styles for cream/blush theme */
+  background-color: #F5F5DC; /* Cream background */
+  color: #FFB6C1; /* Blush text color */
 }
 
-h1, h2, h3, h4, h5, h6 {
-    color: #b26a8a; /* Blush accent for headers */
-}
-
-.button {
-    background-color: #e8c7b1; /* Blush button background */
-    border: 1px solid #b26a8a; /* Blush button border */
-}
-
-.link {
-    color: #5a3e4e; /* Blush link color */
-}
+/* Additional specific styles for cream/blush theme can go here */
