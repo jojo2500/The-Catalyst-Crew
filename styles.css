@@ -1,36 +1,14 @@
-:root {
-    --cream: #f5e1e1;
-    --blush: #f0e1e1;
-}
+/* Restoring previous styles from commit efa7f87a08784c077d51aa2a98728670eda84d69 */
+/* Add new styles here */
 
-.app-container {
-    background-color: var(--cream);
-    border-radius: 10px;
-}
+/* Screenshot Theme Overrides */
+/* Cream/Blush overrides */
+/* Your cream/blush overrides go here. Please replace with actual CSS code */
 
-header {
-    background-color: var(--blush);
-    padding: 20px;
-}
-
-button {
-    background-color: var(--blush);
-    color: white;
-    border: none;
-    border-radius: 5px;
-}
-
-.fcard, .note-group, .mixer-controls, .quiz-sidebar, .viz-theater {
-    background-color: var(--cream);
-    border: 1px solid var(--blush);
-    border-radius: 10px;
-}
-
-.new-panel {
-    background-color: var(--cream);
-    margin: 10px;
-}
-
-.hidden {
-    display: none;
-}
+/* Example Overrides */
+/*
+   body {
+       background-color: #f5f4f3;
+       color: #d1a9a0;
+   }
+*/
