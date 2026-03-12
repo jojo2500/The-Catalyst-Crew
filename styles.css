@@ -1,14 +1,19 @@
-/* Restoring previous styles from commit efa7f87a08784c077d51aa2a98728670eda84d69 */
-/* Add new styles here */
+.existing_content_here
+/* Safe cream/blush theme overrides */
+body {
+    background-color: #f5f0e1; /* Light cream background */
+    color: #5a3e4e; /* Darker blush text color */
+}
 
-/* Screenshot Theme Overrides */
-/* Cream/Blush overrides */
-/* Your cream/blush overrides go here. Please replace with actual CSS code */
+h1, h2, h3, h4, h5, h6 {
+    color: #b26a8a; /* Blush accent for headers */
+}
 
-/* Example Overrides */
-/*
-   body {
-       background-color: #f5f4f3;
-       color: #d1a9a0;
-   }
-*/
+.button {
+    background-color: #e8c7b1; /* Blush button background */
+    border: 1px solid #b26a8a; /* Blush button border */
+}
+
+.link {
+    color: #5a3e4e; /* Blush link color */
+}
