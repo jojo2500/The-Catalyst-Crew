@@ -415,7 +415,7 @@ function applyA11y() {
     const hc = document.getElementById('highContrast')?.checked || false;
     const lt = document.getElementById('largeText')?.checked || false;
     const rm = document.getElementById('reduceMotion')?.checked || false;
-    APP.autoAudio = document.getElementById('audioDesc')?.checked || false;
+    APP.autoAudio = document.getElementById('audioDescriptions')?.checked || false;
 
     document.body.classList.toggle('high-contrast', hc);
     document.body.classList.toggle('large-text', lt);
@@ -1530,7 +1530,7 @@ function updateProfileStats() {
     const quizAttempts = APP.history.filter(item => item.type === 'quiz').length;
     const matchesCount = quizAttempts > 0 ? quizAttempts : 0;
     const savedCount = APP.savedBlends.length;
-    const triedCount = Math.max(savedCount, quizAttempts);
+    const triedCount = savedCount + quizAttempts;
 
     if (pTriedCount) pTriedCount.textContent = String(triedCount);
     if (pMatchCount) pMatchCount.textContent = String(matchesCount);
@@ -1736,7 +1736,7 @@ function loadSavedData() {
         const hc = document.getElementById('highContrast');
         const lt = document.getElementById('largeText');
         const rm = document.getElementById('reduceMotion');
-        const ad = document.getElementById('audioDesc');
+        const ad = document.getElementById('audioDescriptions');
         if (hc) hc.checked = !!a11y.hc;
         if (lt) lt.checked = !!a11y.lt;
         if (rm) rm.checked = !!a11y.rm;
@@ -1744,10 +1744,7 @@ function loadSavedData() {
         applyA11y();
     }
 
-    const speed = document.getElementById('voiceSpeed');
-    const speedVal = document.getElementById('speedVal');
-    if (speed) speed.value = String(APP.speechRate);
-    if (speedVal) speedVal.textContent = `${APP.speechRate.toFixed(1)}x`;
+    updateVoiceSpeed();
 
     if (APP.quizResults) {
         updateProfileWithResults(APP.quizResults);
@@ -1889,9 +1886,12 @@ function applyA11y() {
 
 function updateVoiceSpeed(value) {
     const slider = getEl('voiceSpeed');
-    if (slider && value !== undefined) slider.value = value;
+    if (slider) {
+        // If a value is explicitly passed, update the slider; otherwise sync slider to APP.speechRate
+        slider.value = value !== undefined ? value : APP.speechRate;
+    }
 
-    const speedValue = slider ? parseFloat(slider.value) : 1;
+    const speedValue = slider ? parseFloat(slider.value) : (value !== undefined ? parseFloat(value) : APP.speechRate);
     APP.speechRate = speedValue;
 
     const speedVal = getEl('speedVal', 'speedDisplay');
@@ -2088,11 +2088,19 @@ function updateBottleVisualization() {
 function updateBlendDescription() {
     const title = getEl('blendTitle', 'blendName');
     const description = getEl('blendDescription', 'blendMood');
+    const totalPercentageEl = getEl('totalPercentage');
+    const complexityEl = getEl('complexityLevel');
+    const dominantFamilyEl = getEl('dominantFamily');
 
     const total = Object.values(APP.currentMix).reduce((sum, val) => sum + val, 0);
+
+    if (totalPercentageEl) totalPercentageEl.textContent = total + '%';
+
     if (total === 0) {
         if (title) title.textContent = 'Your Custom Blend';
         if (description) description.textContent = 'Adjust the sliders to create your signature scent';
+        if (complexityEl) complexityEl.textContent = 'Simple';
+        if (dominantFamilyEl) dominantFamilyEl.textContent = '–';
         return;
     }
 
@@ -2111,6 +2119,13 @@ function updateBlendDescription() {
 
     if (title) title.textContent = name;
     if (description) description.textContent = `${total}% formula • ${NOTES[primary].description}`;
+
+    if (dominantFamilyEl) dominantFamilyEl.textContent = NOTES[primary].name;
+
+    if (complexityEl) {
+        const activeNoteCount = Object.values(APP.currentMix).filter(v => v > 0).length;
+        complexityEl.textContent = activeNoteCount <= 1 ? 'Simple' : activeNoteCount <= 3 ? 'Medium' : 'Complex';
+    }
 }
 
 function updateCanvasVisualization() {
@@ -2191,7 +2206,7 @@ function setupLibraryFilters() {
 function setExperienceMode(mode) {
     APP.vizMode = mode === 'visual' ? 'waves' : mode === 'audio' ? 'particles' : mode === 'tactile' ? 'aurora' : 'nebula';
     document.querySelectorAll('.mode-btn[data-mode]').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.mode === mode);
+        btn.classList.toggle('active', btn.dataset.mode === APP.vizMode);
     });
     if (APP.currentVisualizedScent) startVisualization();
 }
@@ -2291,7 +2306,7 @@ function updateProfileStats() {
     const quizAttempts = APP.history.filter(item => item.type === 'quiz').length;
     const savedCount = APP.savedBlends.length;
 
-    if (oldTried) oldTried.textContent = String(Math.max(savedCount, quizAttempts));
+    if (oldTried) oldTried.textContent = String(savedCount + quizAttempts);
     if (oldMatch) oldMatch.textContent = String(quizAttempts);
     if (oldSaved) oldSaved.textContent = String(savedCount);
 

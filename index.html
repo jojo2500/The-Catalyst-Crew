@@ -1290,7 +1290,7 @@
             </div>
 
             <!-- Canvas -->
-            <canvas id="mainVizCanvas" id="sensoryCanvas"
+            <canvas id="mainVizCanvas"
                     aria-label="Fragrance visualization"
                     role="img"></canvas>
 
@@ -1472,6 +1472,24 @@
         </div>
     </div>
 </section>
+
+<!-- ===================== TOAST CONTAINER ===================== -->
+<div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+<!-- ===================== RESULTS MODAL ===================== -->
+<div class="modal" id="resultsModal" role="dialog" aria-modal="true"
+     aria-label="Quiz Results" style="display:none;">
+    <div class="modal-overlay" onclick="closeModal()"></div>
+    <div class="modal-box">
+        <button class="modal-close" type="button" onclick="closeModal()"
+                aria-label="Close results">
+            <i class="fas fa-times" aria-hidden="true"></i>
+        </button>
+        <div id="modalBody">
+            <!-- Populated by JavaScript -->
+        </div>
+    </div>
+</div>
 
 </div>
 
